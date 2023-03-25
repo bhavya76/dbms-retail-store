@@ -1,0 +1,60 @@
+import mysql.connector as connector
+# import datetime
+con = connector.connect(host='localhost', user='root', passwd = 'SQL@hehe23', database = 'flipmartdb')
+if con.is_connected():
+    print("Success")
+else:
+    print("Failure")
+
+mycursor = con.cursor()
+
+# mycursor.execute("select * from Cart where product_ID = 10")
+
+# for x in mycursor:
+#     print(x)
+def adminOrCustomer():
+    print("Enter 1 for Admin and 2 for Customer:")
+    n = int(input())
+    return n
+def insideAdmin():
+    print("Entering as Admin: ")
+    username = input("Enter Username: ")
+    # mycursor.execute(f"Select * from Admin where Username = {username}")
+    # listadmins = mycursor.fetchall()
+    # if len(listadmins)==0:
+    #     #no such username found
+    #     print("No such user found")
+    #     ch = int(input("Enter 1 to continue or 0 to exit: "))
+    #     return ch
+    passw = input("Enter password: ")
+    mycursor.execute(f"Select * from Admin where Username = {username} and Pass_word = {passw}")
+    listadmins = mycursor.fetchall()
+    admin = listadmins[0]
+    if len(listadmins)==0:
+        #no such username found
+        print("No such user found")
+        ch = int(input("Enter 1 to continue or 0 to exit: "))
+        return ch
+    elif len(listadmins)>1:
+        userid = int(input("Enter User ID: "))
+        mycursor.execute(f"Select * from Admin where user_id = {userid}")
+        admin = mycursor.fetchone()
+    branch_pincode = admin[3]
+
+# def insideCustomer():
+print("Welcome User!")
+print("Are you an admin or customer?")
+while True:
+    aorc = adminOrCustomer()
+    if aorc == 0:
+        print("Goodbye user!")
+        break
+    elif aorc == 1:
+        ch = insideAdmin()
+        if ch == 0:
+            break
+        elif ch == 1:
+            continue
+    elif aorc == 2:
+        insideCustomer()
+    
