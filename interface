@@ -57,11 +57,16 @@ def insideAdmin():
     print(f"You have access to the records of Area: {branch_name}")
     admin_ch = adminMenu()
     if admin_ch == 0:
-        ret = int(input("Enter 0 to login or -1 to exit the program: "))
+        ret = int(input("Enter 0 to login again or -1 to exit the program: "))
         return ret
     if admin_ch == 1:
-        admin_ch == viewAvailableProducts(branch_pincode)
-
+        admin_ch = viewAvailableProducts(branch_pincode)
+    # return admin_ch
+def customerMenu():
+    print("Enter 1 to view all the available products.")
+    print("Enter 0 to exit.")
+    ch = int(input("Enter choice: "))
+    return ch
 def insideCustomer():
     print("Entering as Admin: ")
     name = input("Enter your name: ")
@@ -76,7 +81,16 @@ def insideCustomer():
         userid = int(input("Enter User ID: "))
         mycursor.execute(f"Select * from Customer where User_ID = {userid}")
         customer = mycursor.fetchone()
-
+    branch_pincode = customer[4]
+    mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
+    branch_name = mycursor.fetchone()
+    cus_ch = customerMenu()
+    if cus_ch == 0:
+        ret = int(input("Enter 0 to login again or -1 to exit the program: "))
+        return ret
+    elif cus_ch == 1:
+        cus_ch = viewAvailableProducts(branch_pincode)
+    #return cus_ch
 print("Welcome User!")
 print("Are you an admin or customer?")
 while True:
