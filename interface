@@ -1,6 +1,9 @@
 import mysql.connector as connector
-# import datetime
-con = connector.connect(host='localhost', user='root', passwd = 'SQL@hehe23', database = 'flipmartdb')
+import datetime
+
+con = connector.connect(host='localhost', user='root',
+                        passwd='artha121', database='flipMart')
+
 if con.is_connected():
     print("Success")
 else:
@@ -8,14 +11,12 @@ else:
 
 mycursor = con.cursor()
 
-# mycursor.execute("select * from Cart where product_ID = 10")
-
-# for x in mycursor:
-#     print(x)
 def adminOrCustomer():
     print("Enter 1 for Admin and 2 for Customer:")
     n = int(input())
     return n
+
+
 def adminMenu():
     print("Enter 1 to view all the available products.")
     print("Enter 2 to add a product to the catalog.")
@@ -23,6 +24,8 @@ def adminMenu():
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
+
+
 def viewAvailableProducts(pincode):
     mycursor.execute(f"Select * from Available where Pincode = {pincode}")
     listprods = mycursor.fetchall()
@@ -30,11 +33,13 @@ def viewAvailableProducts(pincode):
     for i in listprods:
         print(f"{i[1]}\t{i[2]}")
     return 0
+
+
 def addProduct(pincode):
     prod_id = int(input("Enter Product ID: "))
     mycursor.execute(f"Select * from Product where product_id = {prod_id}")
     listprods = mycursor.fetchone()
-    if len(listprods)>0:
+    if listprods!=None:
         print("A product with this Product ID already exists: ")
         print("Product ID\tProduct_Name\tPrice")
         print(f"{listprods[0]}\t{listprods[1]}\t{listprods[2]}")
@@ -46,9 +51,13 @@ def addProduct(pincode):
     prod_name = input("Enter Product Name: ")
     prod_price = int(input("Enter Product Price: "))
     quant = int(input("Enter quantity available: "))
-    mycursor.execute(f"Insert into product VALUES ({prod_id},{prod_name},{prod_price})")
-    mycursor.execute(f"Insert into available VALUES ({pincode},{prod_id},{quant})")
+    mycursor.execute(
+        f"Insert into product VALUES ({prod_id},'{prod_name}',{prod_price})")
+    mycursor.execute(
+        f"Insert into available VALUES ({pincode},{prod_id},{quant})")
     return 0
+
+
 def changeQuant(branch_pincode):
     prod_id = int(input("Enter Product ID: "))
     mycursor.execute(f"Select * from Product where product_id = {prod_id}")
@@ -59,34 +68,35 @@ def changeQuant(branch_pincode):
     prod_quant = int(input("Enter new quantity: "))
     if prod_quant == 0:
         # delete bhi karna
-        mycursor.execute(f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id}")
+        mycursor.execute(
+            f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id}")
         mycursor.execute(f"Delete from product where product_id = {prod_id}")
-    mycursor.execute(f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
+    mycursor.execute(
+        f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
+
+
 def insideAdmin():
     print("Entering as Admin: ")
     username = input("Enter Username: ")
-    # mycursor.execute(f"Select * from Admin where Username = {username}")
-    # listadmins = mycursor.fetchall()
-    # if len(listadmins)==0:
-    #     #no such username found
-    #     print("No such user found")
-    #     ch = int(input("Enter 1 to continue or 0 to exit: "))
-    #     return ch
     passw = input("Enter password: ")
-    mycursor.execute(f"Select * from Admin where Username = {username} and Pass_word = {passw}")
+    mycursor.execute(
+        f"Select * from Admin where Username = '{username}' and Pass_word = '{passw}'")
+    # return
     listadmins = mycursor.fetchall()
-    admin = listadmins[0]
-    if len(listadmins)==0:
-        #no such username found
+    if len(listadmins) == 0:
+        # no such username found
         print("No such user found")
         ch = int(input("Enter 0 to continue or -1 to exit: "))
         return ch
-    elif len(listadmins)>1:
-        userid = int(input("Enter User ID: "))
-        mycursor.execute(f"Select * from Admin where user_id = {userid}")
-        admin = mycursor.fetchone()
+    admin = listadmins[0]
+    
+    # elif len(listadmins) > 1:
+    #     userid = int(input("Enter User ID: "))
+    #     mycursor.execute(f"Select * from Admin where user_id = '{userid}'")
+    #     admin = mycursor.fetchone()
     branch_pincode = admin[3]
-    mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
+    mycursor.execute(
+        f"Select Area from Branch where Pincode = {branch_pincode}")
     branch_name = mycursor.fetchone()
     print(f"You have access to the records of Area: {branch_name}")
     while True:
@@ -101,27 +111,32 @@ def insideAdmin():
         if admin_ch == 3:
             admin_ch = changeQuant(branch_pincode)
     # return admin_ch
+
+
 def customerMenu():
     print("Enter 1 to view all the available products.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
+
+
 def insideCustomer():
     print("Entering as Admin: ")
     name = input("Enter your name: ")
-    mycursor.execute(f"Select * from Customer where Name = {name}")
+    mycursor.execute(f"Select * from Customer where Name = '{name}'")
     listcus = mycursor.fetchall()
     customer = listcus[0]
     if len(listcus) == 0:
         print("No such customer found")
         ch = int(input("Enter 0 to continue or -1 to exit: "))
         return ch
-    elif len(listcus)>1:
+    elif len(listcus) > 1:
         userid = int(input("Enter User ID: "))
         mycursor.execute(f"Select * from Customer where User_ID = {userid}")
         customer = mycursor.fetchone()
     branch_pincode = customer[4]
-    mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
+    mycursor.execute(
+        f"Select Area from Branch where Pincode = {branch_pincode}")
     branch_name = mycursor.fetchone()
     cus_ch = customerMenu()
     if cus_ch == 0:
@@ -129,7 +144,8 @@ def insideCustomer():
         return ret
     elif cus_ch == 1:
         cus_ch = viewAvailableProducts(branch_pincode)
-    #return cus_ch
+
+    # return cus_ch
 print("Welcome User!")
 print("Are you an admin or customer?")
 while True:
