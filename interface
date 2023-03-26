@@ -16,6 +16,18 @@ def adminOrCustomer():
     print("Enter 1 for Admin and 2 for Customer:")
     n = int(input())
     return n
+def adminMenu():
+    print("Enter 1 to view all the available products.")
+    print("Enter 0 to exit.")
+    ch = int(input("Enter choice: "))
+    return ch
+def viewAvailableProducts(pincode):
+    mycursor.execute(f"Select * from Available where Pincode = {pincode}")
+    listprods = mycursor.fetchall()
+    print("Product_ID\tQuantity")
+    for i in listprods:
+        print(f"{i[1]}\t{i[2]}")
+    return 0
 def insideAdmin():
     print("Entering as Admin: ")
     username = input("Enter Username: ")
@@ -33,15 +45,38 @@ def insideAdmin():
     if len(listadmins)==0:
         #no such username found
         print("No such user found")
-        ch = int(input("Enter 1 to continue or 0 to exit: "))
+        ch = int(input("Enter 0 to continue or -1 to exit: "))
         return ch
     elif len(listadmins)>1:
         userid = int(input("Enter User ID: "))
         mycursor.execute(f"Select * from Admin where user_id = {userid}")
         admin = mycursor.fetchone()
     branch_pincode = admin[3]
+    mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
+    branch_name = mycursor.fetchone()
+    print(f"You have access to the records of Area: {branch_name}")
+    admin_ch = adminMenu()
+    if admin_ch == 0:
+        ret = int(input("Enter 0 to login or -1 to exit the program: "))
+        return ret
+    if admin_ch == 1:
+        admin_ch == viewAvailableProducts(branch_pincode)
 
-# def insideCustomer():
+def insideCustomer():
+    print("Entering as Admin: ")
+    name = input("Enter your name: ")
+    mycursor.execute(f"Select * from Customer where Name = {name}")
+    listcus = mycursor.fetchall()
+    customer = listcus[0]
+    if len(listcus) == 0:
+        print("No such customer found")
+        ch = int(input("Enter 0 to continue or -1 to exit: "))
+        return ch
+    elif len(listcus)>1:
+        userid = int(input("Enter User ID: "))
+        mycursor.execute(f"Select * from Customer where User_ID = {userid}")
+        customer = mycursor.fetchone()
+
 print("Welcome User!")
 print("Are you an admin or customer?")
 while True:
@@ -51,10 +86,13 @@ while True:
         break
     elif aorc == 1:
         ch = insideAdmin()
-        if ch == 0:
+        if ch == -1:
             break
-        elif ch == 1:
+        elif ch == 0:
             continue
     elif aorc == 2:
-        insideCustomer()
-    
+        ch = insideCustomer()
+        if ch == -1:
+            break
+        elif ch == 0:
+            continue
