@@ -18,6 +18,8 @@ def adminOrCustomer():
     return n
 def adminMenu():
     print("Enter 1 to view all the available products.")
+    print("Enter 2 to add a product to the catalog.")
+    print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
@@ -28,6 +30,38 @@ def viewAvailableProducts(pincode):
     for i in listprods:
         print(f"{i[1]}\t{i[2]}")
     return 0
+def addProduct(pincode):
+    prod_id = int(input("Enter Product ID: "))
+    mycursor.execute(f"Select * from Product where product_id = {prod_id}")
+    listprods = mycursor.fetchone()
+    if len(listprods)>0:
+        print("A product with this Product ID already exists: ")
+        print("Product ID\tProduct_Name\tPrice")
+        print(f"{listprods[0]}\t{listprods[1]}\t{listprods[2]}")
+        ch = int(input("Enter 1 to enter another Product ID or 0 to exit: "))
+        if ch == 1:
+            addProduct(pincode)
+        else:
+            return 0
+    prod_name = input("Enter Product Name: ")
+    prod_price = int(input("Enter Product Price: "))
+    quant = int(input("Enter quantity available: "))
+    mycursor.execute(f"Insert into product VALUES ({prod_id},{prod_name},{prod_price})")
+    mycursor.execute(f"Insert into available VALUES ({pincode},{prod_id},{quant})")
+    return 0
+def changeQuant(branch_pincode):
+    prod_id = int(input("Enter Product ID: "))
+    mycursor.execute(f"Select * from Product where product_id = {prod_id}")
+    listprods = mycursor.fetchone()
+    if len(listprods) == 0:
+        print("No such product found")
+        return 0
+    prod_quant = int(input("Enter new quantity: "))
+    if prod_quant == 0:
+        # delete bhi karna
+        mycursor.execute(f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id}")
+        mycursor.execute(f"Delete from product where product_id = {prod_id}")
+    mycursor.execute(f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
 def insideAdmin():
     print("Entering as Admin: ")
     username = input("Enter Username: ")
@@ -55,12 +89,17 @@ def insideAdmin():
     mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
     branch_name = mycursor.fetchone()
     print(f"You have access to the records of Area: {branch_name}")
-    admin_ch = adminMenu()
-    if admin_ch == 0:
-        ret = int(input("Enter 0 to login again or -1 to exit the program: "))
-        return ret
-    if admin_ch == 1:
-        admin_ch = viewAvailableProducts(branch_pincode)
+    while True:
+        admin_ch = adminMenu()
+        if admin_ch == 0:
+            ret = int(input("Enter 0 to login again or -1 to exit the program: "))
+            return ret
+        if admin_ch == 1:
+            admin_ch = viewAvailableProducts(branch_pincode)
+        if admin_ch == 2:
+            admin_ch = addProduct(branch_pincode)
+        if admin_ch == 3:
+            admin_ch = changeQuant(branch_pincode)
     # return admin_ch
 def customerMenu():
     print("Enter 1 to view all the available products.")
