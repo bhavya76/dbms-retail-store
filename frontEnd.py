@@ -1,9 +1,7 @@
 import mysql.connector as connector
 import datetime
 
-con = connector.connect(host='localhost', user='root',
-                        passwd='artha121', database='flipMart')
-
+con = connector.connect(host='localhost', user='root', passwd='artha121', database='flipMart')
 if con.is_connected():
     print("Success")
 else:
@@ -11,18 +9,17 @@ else:
 
 mycursor = con.cursor()
 
-
 def adminOrCustomer():
     print("Enter 1 for Admin and 2 for Customer:")
     n = int(input())
     return n
-
 
 def adminMenu():
     print("Enter 1 to view all the available products.")
     print("Enter 2 to add a product to the catalog.")
     print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 4 to change password.")
+    print("Enter 5 to view the number of deleted admins.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
@@ -44,13 +41,16 @@ def viewCart(customer_id):
         print(f"{i[0]}\t{i[1]}\t{i[2]}")
     return 0
 
-
 def addToCart(customer_id,pincode):
     product_id = int(input("Enter product id:"))
     quantity = int(input("Enter quantity"))
     mycursor.execute(f"insert into cart (select {customer_id}, {product_id},{quantity} from available where available.pincode = {pincode} and available.product_id ={product_id} and available.quantity>{quantity});")
     print("Done")
     return 0
+
+del delFromCart(customer_id, branch_pin):
+
+def placeOrder(customer_id):
 
 
 def addProduct(pincode):
@@ -69,12 +69,9 @@ def addProduct(pincode):
     prod_name = input("Enter Product Name: ")
     prod_price = int(input("Enter Product Price: "))
     quant = int(input("Enter quantity available: "))
-    mycursor.execute(
-        f"Insert into product VALUES ({prod_id},'{prod_name}',{prod_price})")
-    mycursor.execute(
-        f"Insert into available VALUES ({pincode},{prod_id},{quant})")
+    mycursor.execute(f"Insert into product VALUES ({prod_id},'{prod_name}',{prod_price})")
+    mycursor.execute(f"Insert into available VALUES ({pincode},{prod_id},{quant})")
     return 0
-
 
 def changeQuant(branch_pincode):
     prod_id = int(input("Enter Product ID: "))
@@ -85,23 +82,22 @@ def changeQuant(branch_pincode):
         return 0
     prod_quant = int(input("Enter new quantity: "))
     if prod_quant == 0:
-        mycursor.execute(
-            f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id}")
+        mycursor.execute(f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id}")
         mycursor.execute(f"Delete from product where product_id = {prod_id}")
-    mycursor.execute(
-        f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
+    mycursor.execute(f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
 
 def changePassword(customer_id):
     new = input("Enter new password:")
     mycursor.execute(f"update admin set Pass_word = '{new}' where user_id = {customer_id}")
 
+def viewDelAdmins():
+    mycursor.execute(f"select count(Username) from admin where user_id is null")
 
 def insideAdmin():
     print("Entering as Admin: ")
     username = input("Enter Username: ")
     passw = input("Enter password: ")
-    mycursor.execute(
-        f"Select * from Admin where Username = '{username}' and Pass_word = '{passw}'")
+    mycursor.execute(f"Select * from Admin where Username = '{username}' and Pass_word = '{passw}'")
     # return
     listadmins = mycursor.fetchall()
     if len(listadmins) == 0:
@@ -112,8 +108,7 @@ def insideAdmin():
     admin = listadmins[0]
     customer_id = admin[0]
     branch_pincode = admin[3]
-    mycursor.execute(
-        f"Select Area from Branch where Pincode = {branch_pincode}")
+    mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
     branch_name = mycursor.fetchone()
     print(f"You have access to the records of Area: {branch_name}")
     while True:
@@ -129,11 +124,15 @@ def insideAdmin():
             admin_ch = changeQuant(branch_pincode)
         if admin_ch == 4:
             admin_ch = changePassword(customer_id)
+        if admin_ch == 5:
+            admin_ch = viewDelAdmins()
 
 def customerMenu():
     print("Enter 1 to view all the available products.")
     print("Enter 2 to view your cart.")
     print("Enter 3 to add product to your cart.")
+    print("Enter 4 to remove a product from your cart.")
+    print("Enter 5 to place an order.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
@@ -167,12 +166,15 @@ def insideCustomer():
     elif cus_ch == 2:
         cus_ch = viewCart(customer_id)
     elif cus_ch == 3:
-        cus_ch = addToCart(customer_id,branch_pincode)    
-
+        cus_ch = addToCart(customer_id,branch_pincode)   
+    elif cus_ch == 4:
+        cus_ch = delFromCart(customer_id, branch_pincode) 
+    elif cus_ch == 5:
+        cus_ch = placeOrder(customer_id)
 
 print("Welcome User!")
 
-print("View OLAP Querries(Y/N)?")
+print("View buying trends(Y/N)?")
 ch = input("Enter choice: ")
 if (ch == "Y"):
     while (True):
