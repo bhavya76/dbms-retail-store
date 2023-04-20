@@ -20,10 +20,10 @@ def adminMenu():
     print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 4 to change password.")
     print("Enter 5 to view the number of deleted admins.")
+    print("Enter 10 to view buying trends and statistics.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
-
 
 def viewAvailableProducts(pincode):
     mycursor.execute(f"select product.product_name, product.price, available.quantity from product,available where product.product_id = available.product_id and available.pincode = {pincode};")
@@ -51,7 +51,6 @@ def addToCart(customer_id,pincode):
 del delFromCart(customer_id, branch_pin):
 
 def placeOrder(customer_id):
-
 
 def addProduct(pincode):
     prod_id = int(input("Enter Product ID: "))
@@ -93,6 +92,41 @@ def changePassword(customer_id):
 def viewDelAdmins():
     mycursor.execute(f"select count(Username) from admin where user_id is null")
 
+def olap():
+    while (True):
+        print("1. Viewing all orders on different order dates and delivery dates, and then all ordrs on a single order date")
+        print("2. Viewing no of products in cart of different users with different product ids , and then all ordrs in the cart of a single user")
+        print("3. Veiwing price or product grouping with only product id")
+        print("4. Viewing coupons the store has offered upto a date to a given user, and then all the coupons offered upto that date")
+        print("0. Exit from statistics")
+        ch = int(input("Enter choice: "))
+        if (ch == 1):
+            mycursor.execute(f"select if(grouping(order_date)=1,'all order dates',order_date) as order_date,if(grouping(delivery_date)=1,'all delivery dates',delivery_date) as delivered_on,count(total_price) as no_of_orders from orders group by order_date,delivery_date with rollup union select if(grouping(order_date)=1,'all order dates',order_date) as order_date,if(grouping(delivery_date)=1,'all delivery dates',delivery_date) as delivered_on,count(total_price) as no_of_orders from orders group by delivery_date,order_date with rollup")
+            listprods = mycursor.fetchall()
+            print("Order_Date\tDelivery_Date\tNumber_Of_Orders")
+            for i in listprods:
+                print(f"{i[0]}\t{i[1]}\t{i[2]}")
+        elif (ch==2):
+            mycursor.execute(f"select if(grouping(user_ID)=1,'products in cart of all users',user_ID) as User_ID,if(grouping(product_ID)=1,'all products in the cart of user',product_ID) as Product_ID, sum(quantity) as no_of_products from cart group by user_ID,product_ID with rollup order by( grouping(user_id)+grouping(product_id)) desc")
+            listprods = mycursor.fetchall()
+            print("User_ID\tProduct_ID\tNo_Of_Products")
+            for i in listprods:
+                print(f"{i[0]}\t{i[1]}\t{i[2]}")
+        elif (ch==3):
+            mycursor.execute(f"select product_ID,product_name,sum(price) from product group by product_ID,product_name with rollup having grouping(product_name) = 1;")
+            listprods = mycursor.fetchall()
+            print("Product_ID\tProduct_ID\tTotal_Price")
+            for i in listprods:
+                print(f"{i[0]}\t{i[1]}\t{i[2]}")
+        elif (ch==4):
+            mycursor.execute(f"select valid_until_date,user_id, max(discount_offered) as max_discount,count(coupon_id) as total_no_of_coupons_given from coupon group by valid_until_date,user_id with rollup order by( grouping(user_id)+grouping(valid_until_date)) asc ")
+            listprods = mycursor.fetchall()
+            print("Valid_Until_Date\tUser_ID\tMax_Discount_Offered\tTotal_No_Of_Coupons_Given")
+            for i in listprods:
+                print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}")
+        else:
+            break
+    
 def insideAdmin():
     print("Entering as Admin: ")
     username = input("Enter Username: ")
@@ -126,6 +160,8 @@ def insideAdmin():
             admin_ch = changePassword(customer_id)
         if admin_ch == 5:
             admin_ch = viewDelAdmins()
+        if admin_ch == 10:
+            admin_ch = olap()
 
 def customerMenu():
     print("Enter 1 to view all the available products.")
@@ -173,42 +209,6 @@ def insideCustomer():
         cus_ch = placeOrder(customer_id)
 
 print("Welcome User!")
-
-print("View buying trends(Y/N)?")
-ch = input("Enter choice: ")
-if (ch == "Y"):
-    while (True):
-        print("1. Viewing all orders on different order dates and delivery dates, and then all ordrs on a single order date")
-        print("2. Viewing no of products in cart of different users with different product ids , and then all ordrs in the cart of a single user")
-        print("3. Veiwing price or product grouping with only product id")
-        print("4. Viewing coupons the store has offered upto a date to a given user, and then all the coupons offered upto that date")
-        ch = int(input("Enter choice: "))
-        if (ch == 1):
-            mycursor.execute(f"select if(grouping(order_date)=1,'all order dates',order_date) as order_date,if(grouping(delivery_date)=1,'all delivery dates',delivery_date) as delivered_on,count(total_price) as no_of_orders from orders group by order_date,delivery_date with rollup union select if(grouping(order_date)=1,'all order dates',order_date) as order_date,if(grouping(delivery_date)=1,'all delivery dates',delivery_date) as delivered_on,count(total_price) as no_of_orders from orders group by delivery_date,order_date with rollup")
-            listprods = mycursor.fetchall()
-            print("Order_Date\tDelivery_Date\tNumber_Of_Orders")
-            for i in listprods:
-                print(f"{i[0]}\t{i[1]}\t{i[2]}")
-        elif (ch==2):
-            mycursor.execute(f"select if(grouping(user_ID)=1,'products in cart of all users',user_ID) as User_ID,if(grouping(product_ID)=1,'all products in the cart of user',product_ID) as Product_ID, sum(quantity) as no_of_products from cart group by user_ID,product_ID with rollup order by( grouping(user_id)+grouping(product_id)) desc")
-            listprods = mycursor.fetchall()
-            print("User_ID\tProduct_ID\tNo_Of_Products")
-            for i in listprods:
-                print(f"{i[0]}\t{i[1]}\t{i[2]}")
-        elif (ch==3):
-            mycursor.execute(f"select product_ID,product_name,sum(price) from product group by product_ID,product_name with rollup having grouping(product_name) = 1;")
-            listprods = mycursor.fetchall()
-            print("Product_ID\tProduct_ID\tTotal_Price")
-            for i in listprods:
-                print(f"{i[0]}\t{i[1]}\t{i[2]}")
-        elif (ch==4):
-            mycursor.execute(f"select valid_until_date,user_id, max(discount_offered) as max_discount,count(coupon_id) as total_no_of_coupons_given from coupon group by valid_until_date,user_id with rollup order by( grouping(user_id)+grouping(valid_until_date)) asc ")
-            listprods = mycursor.fetchall()
-            print("Valid_Until_Date\tUser_ID\tMax_Discount_Offered\tTotal_No_Of_Coupons_Given")
-            for i in listprods:
-                print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}")
-        else:
-            break
 print("Are you an admin or customer?")
 while True:
     aorc = adminOrCustomer()
