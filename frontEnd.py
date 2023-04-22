@@ -20,6 +20,7 @@ def adminMenu():
     print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 4 to change password.")
     print("Enter 5 to view the number of deleted admins.")
+    print("Enter 6 to view all the available coupons.")
     print("Enter 10 to view buying trends and statistics.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
@@ -68,7 +69,7 @@ def delFromCart(customer_id):
         print("Product_ID\tProduct_Name\tPrice\tQuantity")
         print(f"{prod_id}\t{prod_name}\t{price}\t{quant}")
         new_quant = int(input("Enter new quantity: "))
-        if new_quant < 1:
+        if new_quant < 1 or quant < 1:
             #delete from cart
             mycursor.execute(f"delete from cart where product_id = {prod_id} and user_id = {customer_id}")
         else:
@@ -76,6 +77,22 @@ def delFromCart(customer_id):
             mycursor.execute(f"update cart set quantity = {new_quant} where product_id = {prod_id} and user_id = {customer_id}")
     print("Your updated cart: ")
     viewCart(customer_id)
+
+def findCartPrice(customer_id):
+    totprice = 0
+    mycursor.execute(f"Select * from Cart where user_id = {customer_id}")
+    listprods = mycursor.fetchall()
+    n = len(listprods)
+    if n==0:
+        print("Your cart is empty.")
+        return
+    for i in listprods:
+        prod_id = i[1]
+        quant = i[2]
+        mycursor.execute(f"Select * from product where product_id = {prod_id}")
+        prod_price = mycursor.fetchall()[0][2] * i[2]
+        totprice += prod_price
+    return totprice
 
 def placeOrder(customer_id):
     print("Please choose if you would like to remove any items from your cart before placing your order: ")
@@ -95,7 +112,7 @@ def placeOrder(customer_id):
         print("Product_ID\tProduct_Name\tPrice\tQuantity")
         print(f"{prod_id}\t{prod_name}\t{price}\t{quant}")
         new_quant = int(input("Enter new quantity: "))
-        if new_quant < 1:
+        if new_quant < 1 or quant < 1:
             #delete from cart
             mycursor.execute(f"delete from cart where product_id = {prod_id} and user_id = {customer_id}")
         else:
@@ -103,11 +120,35 @@ def placeOrder(customer_id):
             mycursor.execute(f"update cart set quantity = {new_quant} where product_id = {prod_id} and user_id = {customer_id}")
     #order is finalized
     #follow these steps to place the order:
-
+    
     #coupon table will be updated if the customer is eligible to use one
+    cartPrice = findCartPrice(customer_id)
+    print("Contents of your order: ")
+    viewCart(customer_id)
+    mycursor.execute(f"Select * from coupon where min_order_amt > {cartPrice} and valid_until_date > ")
+    listcoupons = mycursor.fetchall()
+    if len(listcoupons) < 1:
+        print("No coupons applicable for this order.")
+        print(f"Order Total: {cartPrice}")
+    else:
+        #apply max coupon and print that it has been applied and before and after of orderTotal
+        disc = 0
+        for j in listcoupons:
+            if j[3]>disc:
+                disc = j[3]
+        newPrice = (((100-disc)/100)*cartPrice)
+
+    ch = int(input("Enter 0 to go back to menu or any other number to proceed to checkout: "))
+    if ch == 0:
+        return 0
+
     #view new available products --> quantity will have been reduced in 'available'
     #cart will be emptied for this customer
     #the contents of the order will be added to products_in_order
+    ch = int(input("Enter payment method: 1.UPI\n2.Card\n3.Cash\n"))
+    print("Order placed successfully. It will be delivered in 2-3 days. Happy shoppping!")
+    ch = int(input("Enter -1 to exit or any other number to continue shopping: "))
+
 def addProduct(pincode):
     prod_id = int(input("Enter Product ID: "))
     mycursor.execute(f"Select * from Product where product_id = {prod_id}")
@@ -127,6 +168,16 @@ def addProduct(pincode):
     mycursor.execute(f"Insert into product VALUES ({prod_id},'{prod_name}',{prod_price})")
     mycursor.execute(f"Insert into available VALUES ({pincode},{prod_id},{quant})")
     return 0
+
+def viewCoupons():
+    mycursor.execute(f"Select * from coupon where coupon_id is not null")
+    listcoupons = mycursor.fetchall()
+    if len(listcoupons) < 1:
+        print("No available coupons")
+        return
+    print("Coupon_ID\tMin_Order_Amount\tDiscount_Offered\tValid_Until_Date\tIssue_Date")
+    for i in listcoupons:
+        print(f"{i[0]}\t{i[1]}\t{i[3]}\t{i[2]}\t{i[4]}")
 
 def changeQuant(branch_pincode):
     prod_id = int(input("Enter Product ID: "))
@@ -184,7 +235,7 @@ def olap():
             break
     
 def insideAdmin():
-    print("Entering as Admin: ")
+    print("Entering as Admin... ")
     username = input("Enter Username: ")
     passw = input("Enter password: ")
     mycursor.execute(f"Select * from Admin where Username = '{username}' and Pass_word = '{passw}'")
@@ -204,17 +255,19 @@ def insideAdmin():
         if admin_ch == 0:
             ret = int(input("Enter 0 to login again or -1 to exit the program: "))
             return ret
-        if admin_ch == 1:
+        elif admin_ch == 1:
             admin_ch = viewAvailableProducts(branch_pincode)
-        if admin_ch == 2:
+        elif admin_ch == 2:
             admin_ch = addProduct(branch_pincode)
-        if admin_ch == 3:
+        elif admin_ch == 3:
             admin_ch = changeQuant(branch_pincode)
-        if admin_ch == 4:
+        elif admin_ch == 4:
             admin_ch = changePassword(customer_id)
-        if admin_ch == 5:
+        elif admin_ch == 5:
             admin_ch = viewDelAdmins()
-        if admin_ch == 10:
+        elif admin_ch == 6:
+            admin_ch = viewCoupons()
+        elif admin_ch == 10:
             admin_ch = olap()
 
 def customerMenu():
@@ -231,7 +284,7 @@ def insideCustomer():
     #put an infinite loop on customer_menu
     #only delete product from warehouse when the order has been placed
     #update addToCart function so that it returns a message if the quantity asked for was less than the quantity available and update cart accordingly
-    print("Entering as Admin: ")
+    print("Entering as Customer... ")
     name = input("Enter your name: ")
     mycursor.execute(f"Select * from Customer where Name = '{name}'")
     listcus = mycursor.fetchall()
@@ -249,21 +302,25 @@ def insideCustomer():
     branch_pincode = customer[4]
     mycursor.execute(
         f"Select Area from Branch where Pincode = {branch_pincode}")
-    branch_name = mycursor.fetchone()
-    cus_ch = customerMenu()
-    if cus_ch == 0:
-        ret = int(input("Enter 0 to login again or -1 to exit the program: "))
-        return ret
-    elif cus_ch == 1:
-        cus_ch = viewAvailableProducts(branch_pincode)
-    elif cus_ch == 2:
-        cus_ch = viewCart(customer_id)
-    elif cus_ch == 3:
-        cus_ch = addToCart(customer_id,branch_pincode)   
-    elif cus_ch == 4:
-        cus_ch = delFromCart(customer_id) 
-    elif cus_ch == 5:
-        cus_ch = placeOrder(customer_id,branch_pincode)
+    # branch_name = mycursor.fetchone()
+    while True:
+        cus_ch = customerMenu()
+        if cus_ch == 0:
+            ret = int(input("Enter 0 to login again or -1 to exit the program: "))
+            return ret
+        elif cus_ch == 1:
+            cus_ch = viewAvailableProducts(branch_pincode)
+        elif cus_ch == 2:
+            cus_ch = viewCart(customer_id)
+        elif cus_ch == 3:
+            cus_ch = addToCart(customer_id,branch_pincode)   
+        elif cus_ch == 4:
+            cus_ch = delFromCart(customer_id) 
+        elif cus_ch == 5:
+            cus_ch = placeOrder(customer_id,branch_pincode)
+            if cus_ch == -1:
+                return -1
+
 
 print("Welcome User!")
 print("Are you an admin or customer?")
