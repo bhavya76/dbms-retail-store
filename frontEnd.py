@@ -7,7 +7,7 @@ if con.is_connected():
 else:
     print("Failure")
 
-mycursor = con.cursor()
+mycursor = con.cursor(buffered=True)
 
 def adminOrCustomer():
     print("Enter 1 for Admin and 2 for Customer:")
@@ -135,7 +135,8 @@ def placeOrder(customer_id, pincode):
     cartPrice = findCartPrice(customer_id)
     print("Contents of your order: ")
     viewCart(customer_id)
-    mycursor.execute(f"Select * from coupon where user_ID = {customer_id} and min_order_amt > {cartPrice} and order_id is null and order_date is null and valid_until_date > ")
+    currdate = datetime.date.today()
+    mycursor.execute(f"Select * from coupon where user_ID = {customer_id} and min_order_amt > {cartPrice} and order_id is null and order_date is null and valid_until_date > {currdate}")
     listcoupons = mycursor.fetchall()
     if len(listcoupons) < 1:
         print("No coupons applicable for this order.")
