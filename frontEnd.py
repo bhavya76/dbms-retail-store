@@ -1,7 +1,7 @@
 import mysql.connector as connector
 import datetime
 
-con = connector.connect(host='localhost', user='root', passwd='SQL@hehe23', database='flipmartdb')
+con = connector.connect(host='localhost', user='root', passwd='artha121', database='flipMart')
 if con.is_connected():
     print("Success")
 else:
@@ -49,6 +49,12 @@ def viewCart(customer_id):
 
 def addToCart(customer_id,pincode):
     product_id = int(input("Enter product id: "))
+    mycursor.execute(f"Select * from cart where user_id = {customer_id} and product_id = {product_id}")
+    AlreadyPresent = mycursor.fetchall()
+    if len(AlreadyPresent)!= 0:
+        print("This item is already in your cart.")
+        print("Returning to main menu where you can choose to change its quantity.")
+        return
     mycursor.execute(f"Select * from available where pincode = {pincode} and product_id = {product_id}")
     listprods = mycursor.fetchall()
     if len(listprods) == 0:
@@ -60,20 +66,22 @@ def addToCart(customer_id,pincode):
     else:
         print("Product_ID\tProduct_Name\tPrice\tQuantity_Available")
         mycursor.execute(f"Select * from product where product_id = {product_id}")
-        listprod = mycursor.fetchall()[0]
-        print(f"{listprod[0]}\t{listprod[1]}\t{listprod[2]}\t{listprods[2]}")
+        listprod = mycursor.fetchone()
+        mycursor.fetchall()
+        print(f"{listprod[0]}\t{listprod[1]}\t{listprod[2]}\t{listprods[0][2]}")
         quantity = int(input("Enter quantity: "))
-        if quantity>listprods[2]:
+        if quantity>listprods[0][2]:
             print("This item is not available in this quantity.")
             ch = int(input("Enter 1 to try adding again or 0 to go to main menu: "))
             if ch==0:
                 return
             return addToCart(customer_id, pincode)
         else:
-            mycursor.execute(f"insert into cart (select {customer_id}, {product_id},{quantity} from available where available.pincode = {pincode} and available.product_id ={product_id} and available.quantity>{quantity});")
+            print(f"Adding {listprod[1]} to cart")
+            mycursor.execute(f"insert into cart (select {customer_id}, {product_id},{quantity} from available where available.pincode = {pincode} and available.product_id ={product_id} and available.quantity>={quantity});")
     return 0
 
-def delFromCart(customer_id):
+def delFromCart(customer_id,pincode):
     mycursor.execute(f"Select * from Cart where user_id = {customer_id}")
     listprods = mycursor.fetchall()
     n = len(listprods)
@@ -95,7 +103,16 @@ def delFromCart(customer_id):
             mycursor.execute(f"delete from cart where product_id = {prod_id} and user_id = {customer_id}")
         else:
             #change quantity
-            mycursor.execute(f"update cart set quantity = {new_quant} where product_id = {prod_id} and user_id = {customer_id}")
+            mycursor.execute(f"Select * from available where pincode = {pincode} and product_id = {prod_id}")
+            listprods = mycursor.fetchall()
+            if new_quant>listprods[0][2]:
+                print("This item is not available in this quantity.")
+                ch = int(input("Enter 1 to try changing again or 0 to go to main menu: "))
+                if ch==0:
+                    return
+                return delFromCart(customer_id,pincode)
+            else:
+                mycursor.execute(f"update cart set quantity = {new_quant} where product_id = {prod_id} and user_id = {customer_id}")
     print("Your updated cart: ")
     viewCart(customer_id)
 
@@ -309,7 +326,7 @@ def customerMenu():
     print("Enter 1 to view all the available products.")
     print("Enter 2 to view your cart.")
     print("Enter 3 to add product to your cart.")
-    print("Enter 4 to remove a product from your cart.")
+    print("Enter 4 to remove or change the quantity of a product present in your cart.")
     print("Enter 5 to place an order.")
     print("Enter 6 to view all available coupons.")
     print("Enter 0 to exit.")
@@ -350,7 +367,7 @@ def insideCustomer():
         elif cus_ch == 3:
             cus_ch = addToCart(customer_id,branch_pincode)   
         elif cus_ch == 4:
-            cus_ch = delFromCart(customer_id) 
+            cus_ch = delFromCart(customer_id,branch_pincode) 
         elif cus_ch == 5:
             cus_ch = placeOrder(customer_id,branch_pincode)
             if cus_ch == -1:
