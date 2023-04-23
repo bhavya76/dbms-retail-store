@@ -19,7 +19,6 @@ def adminMenu():
     print("Enter 2 to add a product to the catalog.")
     print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 4 to change password.")
-    print("Enter 5 to view the number of deleted admins.")
     print("Enter 10 to view buying trends and statistics.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
@@ -198,8 +197,8 @@ def viewCoupons(customer_id):
 
 def changeQuant(branch_pincode):
     prod_id = int(input("Enter Product ID: "))
-    mycursor.execute(f"Select * from Product where product_id = {prod_id}")
-    listprods = mycursor.fetchall()[0]
+    mycursor.execute(f"Select * from available where product_id = {prod_id} and pincode = {branch_pincode}")
+    listprods = mycursor.fetchall()
     if len(listprods) == 0:
         print("No such product found")
         return 0
@@ -280,8 +279,6 @@ def insideAdmin():
             admin_ch = changeQuant(branch_pincode)
         elif admin_ch == 4:
             admin_ch = changePassword(customer_id)
-        elif admin_ch == 5:
-            admin_ch = viewDelAdmins()
         elif admin_ch == 10:
             admin_ch = olap()
 
@@ -316,8 +313,7 @@ def insideCustomer():
         customer = mycursor.fetchall()[0]
     customer_id = customer[0]
     branch_pincode = customer[4]
-    mycursor.execute(
-        f"Select Area from Branch where Pincode = {branch_pincode}")
+    mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
     # branch_name = mycursor.fetchall()[0]
     while True:
         cus_ch = customerMenu()
@@ -338,7 +334,6 @@ def insideCustomer():
                 return -1
         elif cus_ch == 6:
             cus_ch = viewCoupons(customer_id)
-
 
 print("Welcome User!")
 print("Are you an admin or customer?")
