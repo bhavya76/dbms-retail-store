@@ -1,7 +1,7 @@
 import mysql.connector as connector
 import datetime
 
-con = connector.connect(host='localhost', user='root', passwd='artha121', database='flipMart')
+con = connector.connect(host='localhost', user='root', passwd='SQL@hehe23', database='flipmartdb')
 if con.is_connected():
     print("Success")
 else:
@@ -35,6 +35,9 @@ def viewAvailableProducts(pincode):
 def viewCart(customer_id):
     mycursor.execute(f"Select * from Cart where user_id = {customer_id}")
     listprods = mycursor.fetchall()
+    if len(listprods)==0:
+        print("Your cart is empty.")
+        return 0
     print("Product_ID\tProduct_Name\tPrice\tQuantity")
     for i in listprods:
         mycursor.execute(f"Select * from product where product_id = {i[1]}")
@@ -45,9 +48,29 @@ def viewCart(customer_id):
     return 0
 
 def addToCart(customer_id,pincode):
-    product_id = int(input("Enter product id:"))
-    quantity = int(input("Enter quantity"))
-    mycursor.execute(f"insert into cart (select {customer_id}, {product_id},{quantity} from available where available.pincode = {pincode} and available.product_id ={product_id} and available.quantity>{quantity});")
+    product_id = int(input("Enter product id: "))
+    mycursor.execute(f"Select * from available where pincode = {pincode} and product_id = {product_id}")
+    listprods = mycursor.fetchall()
+    if len(listprods) == 0:
+        print("No such product is available at your branch.")
+        ch = int(input("Enter 1 to add another product or 0 to go to main menu: "))
+        if ch==0:
+            return
+        return addToCart(customer_id, pincode)
+    else:
+        print("Product_ID\tProduct_Name\tPrice\tQuantity_Available")
+        mycursor.execute(f"Select * from product where product_id = {product_id}")
+        listprod = mycursor.fetchall()[0]
+        print(f"{listprod[0]}\t{listprod[1]}\t{listprod[2]}\t{listprods[2]}")
+        quantity = int(input("Enter quantity: "))
+        if quantity>listprods[2]:
+            print("This item is not available in this quantity.")
+            ch = int(input("Enter 1 to try adding again or 0 to go to main menu: "))
+            if ch==0:
+                return
+            return addToCart(customer_id, pincode)
+        else:
+            mycursor.execute(f"insert into cart (select {customer_id}, {product_id},{quantity} from available where available.pincode = {pincode} and available.product_id ={product_id} and available.quantity>{quantity});")
     return 0
 
 def delFromCart(customer_id):
