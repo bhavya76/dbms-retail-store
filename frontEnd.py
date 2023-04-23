@@ -169,7 +169,7 @@ def placeOrder(customer_id, pincode):
 def addProduct(pincode):
     prod_id = int(input("Enter Product ID: "))
     mycursor.execute(f"Select * from Product where product_id = {prod_id}")
-    listprods = mycursor.fetchone()
+    listprods = mycursor.fetchall()[0]
     if listprods != None:
         print("A product with this Product ID already exists: ")
         print("Product ID\tProduct_Name\tPrice")
@@ -199,7 +199,7 @@ def viewCoupons(customer_id):
 def changeQuant(branch_pincode):
     prod_id = int(input("Enter Product ID: "))
     mycursor.execute(f"Select * from Product where product_id = {prod_id}")
-    listprods = mycursor.fetchone()
+    listprods = mycursor.fetchall()[0]
     if len(listprods) == 0:
         print("No such product found")
         return 0
@@ -265,7 +265,7 @@ def insideAdmin():
     customer_id = admin[0]
     branch_pincode = admin[3]
     mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
-    branch_name = mycursor.fetchone()
+    branch_name = mycursor.fetchall()[0]
     print(f"You have access to the records of Area: {branch_name}")
     while True:
         admin_ch = adminMenu()
@@ -313,12 +313,12 @@ def insideCustomer():
     if len(listcus) > 1:
         userid = int(input("Enter User ID: "))
         mycursor.execute(f"Select * from Customer where User_ID = {userid}")
-        customer = mycursor.fetchone()
+        customer = mycursor.fetchall()[0]
     customer_id = customer[0]
     branch_pincode = customer[4]
     mycursor.execute(
         f"Select Area from Branch where Pincode = {branch_pincode}")
-    # branch_name = mycursor.fetchone()
+    # branch_name = mycursor.fetchall()[0]
     while True:
         cus_ch = customerMenu()
         if cus_ch == 0:
