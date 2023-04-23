@@ -20,7 +20,6 @@ def adminMenu():
     print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 4 to change password.")
     print("Enter 5 to view the number of deleted admins.")
-    print("Enter 6 to view all the available coupons.")
     print("Enter 10 to view buying trends and statistics.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
@@ -94,7 +93,16 @@ def findCartPrice(customer_id):
         totprice += prod_price
     return totprice
 
-def placeOrder(customer_id):
+def checkAvailableQuant(new_quantity, pincode, prod_id):
+    mycursor.execute(f"Select * from available where pincode = {pincode} and product_id = {prod_id}")
+    availQuants = mycursor.fetchall()
+    for i in availQuants:
+        availQuant = i[2]
+    if new_quantity >= availQuant:
+        return True
+    return False
+
+def placeOrder(customer_id, pincode):
     print("Please choose if you would like to remove any items from your cart before placing your order: ")
     mycursor.execute(f"Select * from Cart where user_id = {customer_id}")
     listprods = mycursor.fetchall()
@@ -112,6 +120,8 @@ def placeOrder(customer_id):
         print("Product_ID\tProduct_Name\tPrice\tQuantity")
         print(f"{prod_id}\t{prod_name}\t{price}\t{quant}")
         new_quant = int(input("Enter new quantity: "))
+        while not(checkAvailableQuant(new_quant, pincode, prod_id)):
+            new_quant = int(input(f"{new_quant} products are not available at your branch. Please enter new quantity: "))
         if new_quant < 1 or quant < 1:
             #delete from cart
             mycursor.execute(f"delete from cart where product_id = {prod_id} and user_id = {customer_id}")
@@ -125,7 +135,7 @@ def placeOrder(customer_id):
     cartPrice = findCartPrice(customer_id)
     print("Contents of your order: ")
     viewCart(customer_id)
-    mycursor.execute(f"Select * from coupon where min_order_amt > {cartPrice} and valid_until_date > ")
+    mycursor.execute(f"Select * from coupon where user_ID = {customer_id} and min_order_amt > {cartPrice} and order_id is null and order_date is null and valid_until_date > ")
     listcoupons = mycursor.fetchall()
     if len(listcoupons) < 1:
         print("No coupons applicable for this order.")
@@ -137,14 +147,20 @@ def placeOrder(customer_id):
             if j[3]>disc:
                 disc = j[3]
         newPrice = (((100-disc)/100)*cartPrice)
+        print(f"A coupon of {disc}% has been applied to your order.")
+        print(f"Order Total before coupon: {cartPrice}")
+        print(f"Order Total after coupon application: {newPrice}")
 
     ch = int(input("Enter 0 to go back to menu or any other number to proceed to checkout: "))
     if ch == 0:
         return 0
 
-    #view new available products --> quantity will have been reduced in 'available'
-    #cart will be emptied for this customer
-    #the contents of the order will be added to products_in_order
+    # alter table cart
+    # alter table coupon
+    # alter table available
+    # alter table products_in_order
+    # alter table product
+
     ch = int(input("Enter payment method: 1.UPI\n2.Card\n3.Cash\n"))
     print("Order placed successfully. It will be delivered in 2-3 days. Happy shoppping!")
     ch = int(input("Enter -1 to exit or any other number to continue shopping: "))
@@ -169,8 +185,8 @@ def addProduct(pincode):
     mycursor.execute(f"Insert into available VALUES ({pincode},{prod_id},{quant})")
     return 0
 
-def viewCoupons():
-    mycursor.execute(f"Select * from coupon where coupon_id is not null")
+def viewCoupons(customer_id):
+    mycursor.execute(f"Select * from coupon where user_id = {customer_id} and coupon_id is not null and order_id is null and order_date is null")
     listcoupons = mycursor.fetchall()
     if len(listcoupons) < 1:
         print("No available coupons")
@@ -265,8 +281,6 @@ def insideAdmin():
             admin_ch = changePassword(customer_id)
         elif admin_ch == 5:
             admin_ch = viewDelAdmins()
-        elif admin_ch == 6:
-            admin_ch = viewCoupons()
         elif admin_ch == 10:
             admin_ch = olap()
 
@@ -276,6 +290,7 @@ def customerMenu():
     print("Enter 3 to add product to your cart.")
     print("Enter 4 to remove a product from your cart.")
     print("Enter 5 to place an order.")
+    print("Enter 6 to view all available coupons.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
@@ -320,6 +335,8 @@ def insideCustomer():
             cus_ch = placeOrder(customer_id,branch_pincode)
             if cus_ch == -1:
                 return -1
+        elif cus_ch == 6:
+            cus_ch = viewCoupons(customer_id)
 
 
 print("Welcome User!")
