@@ -3,7 +3,7 @@ import datetime
 from datetime import date
 import random
 import traceback
-con = connector.connect(host='localhost', user='root', passwd='artha121', database='flipMart')
+con = connector.connect(host='localhost', user='root', passwd='SQL@hehe23', database='flipmartdb')
 if con.is_connected():
     print("Success")
 else:
@@ -227,7 +227,7 @@ def placeOrder(customer_id, pincode):
         mycursor.execute(f"delete from cart where cart.user_id = {customer_id};")
         # alter table coupon
         
-        ch = int(input("Enter payment method: 1.UPI\n2.Card\n3.Cash\n"))
+        ch = int(input("Enter payment method:\n1.UPI\n2.Card\n3.Cash\n"))
         print("Order placed successfully. It will be delivered in 2-3 days. Happy shoppping!")
         mycursor.execute(f"select * from customer where user_id = {customer_id}")
         mycursor.execute("commit;")   
@@ -254,9 +254,11 @@ def addProduct(pincode):
         print("A product with this Product ID already exists: ")
         print("Product ID\tProduct_Name\tPrice")
         print(f"{listprods[0]}\t{listprods[1]}\t{listprods[2]}")
-        ch = int(input("Enter 1 to enter another Product ID or 0 to exit: "))
+        ch = int(input("Enter 1 to continue to add this product or 0 to exit: "))
         if ch == 1:
-            return addProduct(pincode)
+            new_quant = int(input("Enter quantity that has been made available: "))
+            mycursor.execute(f"Insert into available VALUES ({pincode}, {prod_id}, {new_quant})")
+            return
         else:
             return 0
     prod_name = input("Enter Product Name: ")
@@ -290,9 +292,9 @@ def rewardCoupon(customer_id):
         if len(listcoupons) < 1:
             print("No available coupons")
             return
-        # print("Coupon_ID\tMin_Order_Amount\tDiscount_Offered\tValid_Until_Date\tIssue_Date")
+        print("Coupon_ID\tMin_Order_Amount\tValid_Until_Date\tDiscount_Offered\tIssue_Date")
         for i in listcoupons:
-            print(i)
+            print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}\t{i[4]}")
         
     else:
         mycursor.execute(f"select max(user_id) from customer")
@@ -306,8 +308,9 @@ def rewardCoupon(customer_id):
         if len(listcoupons) < 1:
             print("No available coupons")
             return
+        print("Coupon_ID\tMin_Order_Amount\tValid_Until_Date\tDiscount_Offered\tIssue_Date")
         for i in listcoupons:
-            print(i)
+            print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}\t{i[4]}")
         
         
 def viewCoupons(customer_id):
@@ -473,12 +476,14 @@ while True:
     elif aorc == 1:
         ch = insideAdmin()
         if ch == -1:
+            print("Goodbye user!")
             break
         elif ch == 0:
             continue
     elif aorc == 2:
         ch = insideCustomer()
         if ch == -1:
+            print("Goodbye user!")
             break
         elif ch == 0:
             continue
