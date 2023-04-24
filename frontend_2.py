@@ -3,7 +3,7 @@ import datetime
 from datetime import date
 import random
 import traceback
-con = connector.connect(host='localhost', user='root', passwd='SQL@hehe23', database='flipmartdb')
+con = connector.connect(host='localhost', user='root', passwd='artha121', database='flipMart')
 if con.is_connected():
     print("Success")
 else:
@@ -276,7 +276,6 @@ def rewardCoupon(admin_id):
     mycursor.execute(f"select max(coupon_id) from coupon")
     coupon_id =mycursor.fetchall()[0]
     coupon_id = coupon_id[0]
-    print(coupon_id+1)
     if(n==1):
         try:
             mycursor.execute("start transaction;")
@@ -298,9 +297,14 @@ def rewardCoupon(admin_id):
             print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}\t{i[4]}")
         
     else:
-        mycursor.execute(f"select max(user_id) from customer")
-        user_id = mycursor.fetchall()[0]
-        u = int(user_id[0])
+        mycursor.execute(f"select user_id  from customer")
+        o_id =mycursor.fetchall()
+        order_id = 0
+        for i in range(len(o_id)):
+            if(int(o_id[i][0])>order_id):
+                order_id = int(o_id[i][0])
+
+        u = order_id
         u = random.randint(1,u)
         mycursor.execute(f"insert into coupon values({coupon_id+1},1000,'{date.today()+datetime.timedelta(days=10)}',{random.randint(1,30)},'{date.today()}',null,null,{u});")
         print("Updated list of coupons")
@@ -309,9 +313,9 @@ def rewardCoupon(admin_id):
         if len(listcoupons) < 1:
             print("No available coupons")
             return
-        print("Coupon_ID\tMin_Order_Amount\tValid_Until_Date\tDiscount_Offered\tIssue_Date")
+        print("Coupon_ID\tMin_Order_Amount\tValid_Until_Date\tDiscount_Offered\tIssue_Date\tUser_ID")
         for i in listcoupons:
-            print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}\t{i[4]}")
+            print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}\t{i[4]}\t{i[7]}")
         
         
 def viewCoupons(customer_id):
@@ -326,17 +330,22 @@ def viewCoupons(customer_id):
 
 def changeQuant(branch_pincode):
     prod_id = int(input("Enter Product ID: "))
-
-    mycursor.execute(f"Select * from available where product_id = {prod_id} and pincode = {branch_pincode}")
+    mycursor.execute("set autocommit = 0;")
+    mycursor.execute("start transaction;")
+    mycursor.execute(f"Select * from available where product_id = {prod_id} and pincode = {branch_pincode};")
     listprods = mycursor.fetchall()
     if len(listprods) == 0:
         print("No such product found")
+        mycursor.execute("rollback;")
+        mycursor.execute("set autocommit=1;")
         return 0
     prod_quant = int(input("Enter new quantity: "))
     if prod_quant == 0:
-        mycursor.execute(f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id}")
-        mycursor.execute(f"Delete from product where product_id = {prod_id}")
-    mycursor.execute(f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
+        mycursor.execute(f"Delete from available where pincode = {branch_pincode} and product_id = {prod_id};")
+        mycursor.execute(f"Delete from product where product_id = {prod_id};")
+    mycursor.execute(f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id};")
+    mycursor.execute("commit;")
+    mycursor.execute("set autcommit = 1;")
 
 def changePassword(admin_id):
     new = input("Enter new password:")
@@ -345,10 +354,16 @@ def changePassword(admin_id):
 def addCustomer(pincode):
     cus_name = input("Enter the name of the customer: ")
     cus_phone = int(input("Enter the phone number of the customer: "))
-    mycursor.execute(f"Select max(user_id) from customer")
-    new_user_id = mycursor.fetchall() + 1
-    mycursor.execute(f"Insert into customer values ({new_user_id}, {cus_name}, {cus_phone}, 0, {pincode})")
-    mycursor.fetchall()
+    mycursor.execute(f"select user_id  from customer")
+    o_id =mycursor.fetchall()
+    order_id = 0
+    for i in range(len(o_id)):
+        if(int(o_id[i][0])>order_id):
+            order_id = int(o_id[i][0])
+    order_id +=1
+    new_user_id = order_id
+    mycursor.execute(f"Insert into customer values ({new_user_id}, '{cus_name}', {cus_phone}, 0, {pincode})")
+    # mycursor.fetchall()
     return
 
 def viewDelAdmins():
@@ -420,7 +435,7 @@ def insideAdmin():
             admin_ch = changePassword(admin_id)
         elif admin_ch==5:
             admin_ch = rewardCoupon(admin_id)
-        elif admiin_ch == 6:
+        elif admin_ch == 6:
             admin_ch = addCustomer(branch_pincode)
         elif admin_ch == 7:
             admin_ch = olap()
@@ -477,25 +492,30 @@ def insideCustomer():
                 return -1
         elif cus_ch == 6:
             cus_ch = viewCoupons(customer_id)
+try:
+    print("Welcome User!")
+    print("Are you an admin or customer?")
+    while True:
+        aorc = adminOrCustomer()
+        if aorc == 0:
+            print("Goodbye user!")
+            break
+        elif aorc == 1:
+            ch = insideAdmin()
+            if ch == -1:
+                print("Goodbye user!")
+                break
+            elif ch == 0:
+                continue
+        elif aorc == 2:
+            ch = insideCustomer()
+            if ch == -1:
+                print("Goodbye user!")
+                break
+            elif ch == 0:
+                continue
+    mycursor.execute("commit;")
+except:
+    mycursor.execute("commit;")
+    traceback.print_exc()
 
-print("Welcome User!")
-print("Are you an admin or customer?")
-while True:
-    aorc = adminOrCustomer()
-    if aorc == 0:
-        print("Goodbye user!")
-        break
-    elif aorc == 1:
-        ch = insideAdmin()
-        if ch == -1:
-            print("Goodbye user!")
-            break
-        elif ch == 0:
-            continue
-    elif aorc == 2:
-        ch = insideCustomer()
-        if ch == -1:
-            print("Goodbye user!")
-            break
-        elif ch == 0:
-            continue
