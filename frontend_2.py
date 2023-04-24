@@ -28,11 +28,11 @@ def adminMenu():
     return ch
 
 def viewAvailableProducts(pincode):
-    mycursor.execute(f"select product.product_name, product.price, available.quantity from product,available where product.product_id = available.product_id and available.pincode = {pincode};")
+    mycursor.execute(f"select product.product_id, product.product_name, product.price, available.quantity from product,available where product.product_id = available.product_id and available.pincode = {pincode};")
     listprods = mycursor.fetchall()
-    print("Product_Name\tPrice\tQuantity")
+    print("Product_ID\tProduct_Name\tPrice\tQuantity")
     for i in listprods:
-        print(f"{i[0]}\t{i[1]}\t{i[2]}")
+        print(f"{i[0]}\t{i[1]}\t{i[2]}\t{i[3]}")
     return 0
 
 def viewCart(customer_id):
@@ -364,7 +364,7 @@ def olap():
         elif (ch==3):
             mycursor.execute(f"select product_ID,product_name,sum(price) from product group by product_ID,product_name with rollup having grouping(product_name) = 1;")
             listprods = mycursor.fetchall()
-            print("Product_ID\tProduct_ID\tTotal_Price")
+            print("Product_ID\tProduct_Name\tTotal_Price")
             for i in listprods:
                 print(f"{i[0]}\t{i[1]}\t{i[2]}")
         elif (ch==4):
