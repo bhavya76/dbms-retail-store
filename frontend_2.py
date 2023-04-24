@@ -345,9 +345,11 @@ def changePassword(admin_id):
 def addCustomer(pincode):
     cus_name = input("Enter the name of the customer: ")
     cus_phone = int(input("Enter the phone number of the customer: "))
-    no_orders = 0
-    pin = pincode
-
+    mycursor.execute(f"Select max(user_id) from customer")
+    new_user_id = mycursor.fetchall() + 1
+    mycursor.execute(f"Insert into customer values ({new_user_id}, {cus_name}, {cus_phone}, 0, {pincode})")
+    mycursor.fetchall()
+    return
 
 def viewDelAdmins():
     mycursor.execute(f"select count(Username) from admin where user_id is null")
