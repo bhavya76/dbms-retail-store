@@ -185,7 +185,14 @@ def placeOrder(customer_id, pincode):
     try:
         # alter table products_in_order
         # alter table product
-        mycursor.execute(f"insert into orders (select {order_id}, '{date.today()}', (select if(sum(quantity*price) is not null,sum(quantity*price),0) from cart,product where cart.user_id={customer_id} and cart.product_id = product.product_id),'{date.today()+ datetime.timedelta(days=4)}',{pincode},{customer_id} where not exists(select cart.product_id as prod from available,cart where available.pincode = {pincode} and cart.user_id = {customer_id} and available.product_id = cart.product_id and available.quantity is not null and available.quantity < cart.quantity) and not exists(select cart.product_id  from cart  where cart.user_id = {customer_id} and cart.product_id not in (select product_id  from available where pincode = {pincode})));")
+        mycursor.execute(f"select {order_id}, '{date.today()}', (select if(sum(quantity*price) is not null,sum(quantity*price),0) from cart,product where cart.user_id={customer_id} and cart.product_id = product.product_id),'{date.today()+ datetime.timedelta(days=4)}',{pincode},{customer_id} where not exists(select cart.product_id as prod from available,cart where available.pincode = {pincode} and cart.user_id = {customer_id} and available.product_id = cart.product_id and available.quantity is not null and available.quantity < cart.quantity) and not exists(select cart.product_id  from cart  where cart.user_id = {customer_id} and cart.product_id not in (select product_id  from available where pincode = {pincode}));")
+        entry = mycursor.fetchall()[0]
+        e_2 = int(entry[2])
+        entry = list(entry)
+        entry[2] = e_2
+        entry = tuple(entry)
+        print(entry[2])
+        mycursor.execute(f"insert into orders values({entry[0]},'{date.today()}',{entry[2]},'{date.today()+ datetime.timedelta(days=4)}',{entry[4]},{entry[5]})")
         mycursor.execute("delete from available where quantity = 0;")
         mycursor.execute(f"update customer set total_no_of_orders = total_no_of_orders +1 where customer.user_id = {customer_id};")
         #coupon table will be updated if the customer is eligible to use one
@@ -209,10 +216,7 @@ def placeOrder(customer_id, pincode):
             print(f"Order Total before coupon: {cartPrice}")
             print(f"Order Total after coupon application: {newPrice}")
             mycursor.execute(f"update orders set total_price = {newPrice} where order_id = {order_id}")
-            mycursor.execute(f"update coupon set order_date = {currdate} and order_id = {order_id} where user_id = {customer_id} and discount_offered = {disc} limit 1;")
-
-
-
+            mycursor.execute(f"update coupon set order_date = '{date.today()}',order_id = {order_id} where user_id = {customer_id} and discount_offered = {disc} limit 1;")
         ch = int(input("Enter 0 to go back to menu or any other number to proceed to checkout: "))
         if ch == 0:
             mycursor.execute("rollback;")
@@ -226,7 +230,7 @@ def placeOrder(customer_id, pincode):
         ch = int(input("Enter payment method: 1.UPI\n2.Card\n3.Cash\n"))
         print("Order placed successfully. It will be delivered in 2-3 days. Happy shoppping!")
         mycursor.execute(f"select * from customer where user_id = {customer_id}")
-        mycursor.execute("commit;")
+        mycursor.execute("commit;")   
         
     except Exception  as e:
         mycursor.execute("rollback;")
@@ -234,6 +238,10 @@ def placeOrder(customer_id, pincode):
         print(e)
         traceback.print_exc()
         return 0
+    mycursor.execute(f"select * from orders where order_id = {order_id};")
+    listprods = mycursor.fetchall()
+    for i in listprods:
+        print(i)
     ch = int(input("Enter -1 to exit or any other number to continue shopping: "))
     mycursor.execute("SET autocommit = 1;")
 
@@ -332,7 +340,7 @@ def changePassword(customer_id):
 
 def viewDelAdmins():
     mycursor.execute(f"select count(Username) from admin where user_id is null")
-
+    
 def olap():
     while (True):
         print("1. Viewing all orders on different order dates and delivery dates, and then all ordrs on a single order date")
