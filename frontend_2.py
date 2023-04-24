@@ -22,7 +22,8 @@ def adminMenu():
     print("Enter 3 to alter the quantity of a product in the catalog.")
     print("Enter 4 to change password.")
     print("Enter 5 to reward coupons.")
-    print("Enter 10 to view buying trends and statistics.")
+    print("Enter 6 to add a new customer to your branch.")
+    print("Enter 7 to view buying trends and statistics.")
     print("Enter 0 to exit.")
     ch = int(input("Enter choice: "))
     return ch
@@ -268,7 +269,7 @@ def addProduct(pincode):
     mycursor.execute(f"Insert into available VALUES ({pincode},{prod_id},{quant})")
     return 0
 
-def rewardCoupon(customer_id):
+def rewardCoupon(admin_id):
     print("Enter 1 to reward by number of orders")
     print("Enter 2 to reward randomly")
     n = int(input("Enter choice:"))
@@ -298,7 +299,7 @@ def rewardCoupon(customer_id):
         
     else:
         mycursor.execute(f"select max(user_id) from customer")
-        user_id =mycursor.fetchall()[0]
+        user_id = mycursor.fetchall()[0]
         u = int(user_id[0])
         u = random.randint(1,u)
         mycursor.execute(f"insert into coupon values({coupon_id+1},1000,'{date.today()+datetime.timedelta(days=10)}',{random.randint(1,30)},'{date.today()}',null,null,{u});")
@@ -337,9 +338,16 @@ def changeQuant(branch_pincode):
         mycursor.execute(f"Delete from product where product_id = {prod_id}")
     mycursor.execute(f"Update available set quantity = {prod_quant} where pincode = {branch_pincode} and product_id = {prod_id}")
 
-def changePassword(customer_id):
+def changePassword(admin_id):
     new = input("Enter new password:")
-    mycursor.execute(f"update admin set Pass_word = '{new}' where user_id = {customer_id}")
+    mycursor.execute(f"update admin set Pass_word = '{new}' where user_id = {admin_id}")
+
+def addCustomer(pincode):
+    cus_name = input("Enter the name of the customer: ")
+    cus_phone = int(input("Enter the phone number of the customer: "))
+    no_orders = 0
+    pin = pincode
+
 
 def viewDelAdmins():
     mycursor.execute(f"select count(Username) from admin where user_id is null")
@@ -390,7 +398,7 @@ def insideAdmin():
         ch = int(input("Enter 0 to continue or -1 to exit: "))
         return ch
     admin = listadmins[0]
-    customer_id = admin[0]
+    admin_id = admin[0]
     branch_pincode = admin[3]
     mycursor.execute(f"Select Area from Branch where Pincode = {branch_pincode}")
     branch_name = mycursor.fetchall()[0]
@@ -407,10 +415,12 @@ def insideAdmin():
         elif admin_ch == 3:
             admin_ch = changeQuant(branch_pincode)
         elif admin_ch == 4:
-            admin_ch = changePassword(customer_id)
+            admin_ch = changePassword(admin_id)
         elif admin_ch==5:
-            admin_ch = rewardCoupon(customer_id)
-        elif admin_ch == 10:
+            admin_ch = rewardCoupon(admin_id)
+        elif admiin_ch == 6:
+            admin_ch = addCustomer(branch_pincode)
+        elif admin_ch == 7:
             admin_ch = olap()
 
 def customerMenu():
