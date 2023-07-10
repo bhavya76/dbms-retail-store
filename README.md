@@ -71,3 +71,4 @@ T2: Customer C checks whether products in their cart are available at the neares
 
 **Write(Available):** Updates available table **Write(Cart):** Empties cart
 
+![](Aspose.Words.213df103-46b8-4fd1-afb5-52323dde4b5e.001.jpeg)
